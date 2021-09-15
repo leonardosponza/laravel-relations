@@ -3,9 +3,8 @@
 namespace App\Http\Controllers\admin;
 
 use App\Http\Controllers\Controller;
-use Illuminate\Http\Request;
 use Illuminate\Support\Str;
-
+use Illuminate\Http\Request;
 use App\Post;
 
 class PostController extends Controller
@@ -17,8 +16,8 @@ class PostController extends Controller
      */
     public function index()
     {
-        $posts = Post::all();
-        return view('admin.posts.index', compact('posts'));
+        $posts=Post::all();
+        return view('admin.posts.index',compact('posts'));
     }
 
     /**
@@ -39,13 +38,18 @@ class PostController extends Controller
      */
     public function store(Request $request)
     {
-        $data = $request->all();
+        $request->validate([
+            'title'=>'required',
+            'slug'=>'required',
+        ]);
+        $data=$request->all();
 
-        $new_post = new Post ();
-        $new_post->slug = Str::slug($data[title],'-');
-        $new_post->fill($data);
+        $newPost=new Post();
+        
+        $newPost->fill($data);
+        $newPost->slug = Str::of($data['title'])->slug('-');
 
-        $new_post->save();
+        $newPost->save();
 
         return redirect()->route('admin.posts.index');
     }
@@ -56,9 +60,10 @@ class PostController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function show($id)
+    public function show($slug)
     {
-        //
+        $post=Post::where('slug',$slug)->first();
+        return view('admin.posts.show', compact('post'));
     }
 
     /**
@@ -69,7 +74,7 @@ class PostController extends Controller
      */
     public function edit(Post $post)
     {
-        return view('admin.posts.show', compact('post'));
+        return view('admin.posts.edit', compact('post'));
     }
 
     /**
@@ -79,9 +84,15 @@ class PostController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function update(Request $request, $id)
-    {
-        //
+    public function update(Request $request, Post $post)
+    {   
+        $request->validate([
+            'title'=>'required',
+            'slug'=>'required',
+        ]);
+        $data=$request->all();
+        $post->update($data);
+        return redirect()->route('admin.posts.show', $post->slug);
     }
 
     /**
@@ -90,8 +101,9 @@ class PostController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function destroy($id)
+    public function destroy(Post $post)
     {
-        //
+        $post->delete();
+        return redirect()->route('admin.posts.index');
     }
 }
